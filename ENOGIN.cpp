@@ -1,128 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <assert.h>
+#include <ctype.h>
+#include "KnightSort.h"
+#include "StringComparator.h"
 
-void StrSort(char** dataPtr, int strNum);
-int CompareStr(char* a, char* b, int lenA, int lenB);
 
 int main()
 {
-    FILE* fileP = fopen("text.txt", "r");
+    FILE* filePtr = fopen("EugeneOnegin.txt", "r"); // open check
+    struct stat fileStat = {};
+    fstat(fileno(filePtr), &fileStat);
 
-    int charr = 0, strNum = 0, charNum = 0;
+    //printf("number of symbols = %d\n\n", fileStat.st_size);
 
-    while ((charr = getc(fileP)) != EOF)
+    char* strings = (char*)calloc(fileStat.st_size + 1, sizeof(char));
+    int symbNum = fread(strings, sizeof(char), fileStat.st_size, filePtr);
+
+    //printf("fread (..., %d, ...) returned %d\n", fileStat.st_size, nRead);
+
+    int strNum = fileStat.st_size - symbNum;
+
+    for (int i = symbNum + 1; i < fileStat.st_size; i++)
     {
-        if (charr == '\n')
-        {
-            strNum++;
-        }
-        charNum++;
+        strings[i] = '\0';
     }
 
-    fseek(fileP, 0, SEEK_SET);
+    printf("number of strings = %d\n\n", strNum);
 
-    char** strPtr = (char**)calloc(strNum+1, sizeof(char*));
-    char* strs = (char*)calloc(charNum, sizeof(char));
+    string_inf* stringsInf = (string_inf*)calloc(strNum, sizeof(string_inf));   // zero struct
+    stringsInf[0].ptr = strings;
 
-    strPtr[0] = strs;
-    int strLen = 0, strCount = 1;
+    FillStringsInf(strings, stringsInf, symbNum);
 
-    printf("Read log:\n");
+    KnightSort(stringsInf, strNum, sizeof(string_inf), &CompareReverseStringInf);
 
-    for (int i = 0; i < charNum; i++)
-    {
-        charr = getc(fileP);
+    OneginPrintf(stringsInf, strNum);
 
-        strs[i] = charr;
-
-        printf("%c", charr);
-
-        strLen++;
-
-        if (charr == '\n')
-        {
-            printf("strCount = %d\nstrLen = %d\n\n", strCount, strLen);
-            strPtr[strCount] = strPtr[strCount-1] + strLen;
-
-            strCount = strCount+1;
-            strLen = 0;
-        }
-    }
-    fclose(fileP);
-
-    printf("Normal\n");
-    for (int i = 0; i < strNum; i++)
-    {
-        for (int j = 0; j < (strPtr[i+1]-strPtr[i])/(int)sizeof(char); j++)
-        {
-            printf("%c", *(strPtr[i]+j));
-        }
-    }
-
-    StrSort(strPtr, strNum);
-
-    printf("\nSorted\n");
-    for (int i = 0; i < strNum; i++)
-    {
-
-        for (int j = 0;; j++)
-        {
-            printf("%c", *(strPtr[i]+j));
-
-            if (*(strPtr[i]+j) == '\n')
-            {
-                break;
-            }
-        }
-    }
+    fclose(filePtr);
+    free(stringsInf);
+    free(strings);
 }
-
-void StrSort(char** dataPtr, int strNum)
-{
-    char* bufer = 0;
-
-    for (int i = 1; i < strNum; i++)
-    {
-        for (int j = 0; j < strNum - i; j++)
-        {
-            if (CompareStr(dataPtr[j], dataPtr[j+1], (dataPtr[j+1]-dataPtr[j])/(int)sizeof(char*), (dataPtr[j+2]-dataPtr[j+1])/(int)sizeof(char*)) < 0)
-            {
-                bufer = dataPtr[j+1];
-                dataPtr[j+1] = dataPtr[j];
-                dataPtr[j] = bufer;
-            }
-        }
-    }
-
-}
-
-
-int CompareStr(char* a, char* b, int lenA, int lenB)
-{
-    for (int i = 0; i < lenA; i++)
-    {
-        if (i == lenA-1 && i < lenB)
-        {
-            return 1;
-        }
-        if (i == lenA-1 && i == lenB)
-        {
-            return 0;
-        }
-        if (i == lenA-1 && i > lenB)
-        {
-            return -1;
-        }
-
-        if (a[i] < b[i])
-        {
-            return 1;
-        }
-        if (a[i] > b[i])
-        {
-            return -1;
-        }
-    }
-}
-
-
